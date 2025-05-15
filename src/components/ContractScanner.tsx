@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ScannerService } from '../services/api';
+import { ScannerService } from '../services';
 import { ContractScanResult, AlertSeverity } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
