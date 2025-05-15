@@ -8,6 +8,7 @@ import { Search, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface ContractScannerProps {
   className?: string;
@@ -38,6 +39,13 @@ const ContractScanner: React.FC<ContractScannerProps> = ({ className }) => {
     if (riskScore > 50) return 'text-orange-500';
     if (riskScore > 25) return 'text-amber-500';
     return 'text-green-500';
+  };
+
+  const getRiskBgColor = (riskScore: number): string => {
+    if (riskScore > 75) return 'bg-red-500';
+    if (riskScore > 50) return 'bg-orange-500';
+    if (riskScore > 25) return 'bg-amber-500';
+    return 'bg-green-500';
   };
 
   const getSeverityColor = (severity: AlertSeverity): string => {
@@ -110,8 +118,7 @@ const ContractScanner: React.FC<ContractScannerProps> = ({ className }) => {
                 </div>
                 <Progress 
                   value={scanResult.riskScore} 
-                  className="h-1.5" 
-                  indicatorClassName={getRiskColor(scanResult.riskScore).replace('text-', 'bg-')}
+                  className={cn("h-1.5", getRiskBgColor(scanResult.riskScore))} 
                 />
               </div>
               
