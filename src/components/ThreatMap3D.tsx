@@ -1,9 +1,8 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ThreejsGraph, ThreejsNode, ThreejsEdge } from '../types';
-import { ThreatMapService } from '../services/api';
+import { ThreatMapService } from '../services';
 
 interface ThreatMap3DProps {
   className?: string;

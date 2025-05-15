@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { AlertsService } from '../services/api';
+import { AlertsService } from '../services';
 import { Alert, AlertSeverity } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Bell } from 'lucide-react';

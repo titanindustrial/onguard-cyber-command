@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import { WalletService } from '../services/api';
+import { WalletService } from '../services';
 import { WalletInfo } from '../types';
 import {
   DropdownMenu,
