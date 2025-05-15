@@ -1,4 +1,3 @@
-
 import { Alert, ChatMessage, ContractScanResult, ACPServiceRequest, ThreejsGraph } from '../types';
 import { 
   generateMockAlerts, 
@@ -9,9 +8,10 @@ import {
 } from '../utils/mockData';
 
 // API endpoints would be configured here in a real application
-const API_BASE_URL = '{{ApiBaseUrl}}' || 'https://api.onguard.ai';
-const WEBSOCKET_ENDPOINT = '{{WebSocketEndpoint}}' || 'wss://ws.onguard.ai';
-const CONTRACT_SCANNER_ENDPOINT = '{{ContractScannerEndpoint}}' || `${API_BASE_URL}/scanner`;
+// Using string literals instead of conditional expressions that TypeScript flags as always truthy
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.onguard.ai';
+const WEBSOCKET_ENDPOINT = import.meta.env.VITE_WEBSOCKET_ENDPOINT || 'wss://ws.onguard.ai';
+const CONTRACT_SCANNER_ENDPOINT = import.meta.env.VITE_CONTRACT_SCANNER_ENDPOINT || `${API_BASE_URL}/scanner`;
 
 // AlertsService
 export const AlertsService = {
