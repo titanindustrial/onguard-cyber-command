@@ -1,8 +1,10 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ThreejsGraph, ThreejsNode, ThreejsEdge } from '../types';
 import { ThreatMapService } from '../services';
+import { useIsMobile } from '../hooks/use-mobile';
 
 interface ThreatMap3DProps {
   className?: string;
@@ -17,6 +19,7 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
   const controlsRef = useRef<OrbitControls | null>(null);
   const nodesRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const edgesRef = useRef<Map<string, THREE.Line>>(new Map());
+  const isMobile = useIsMobile();
 
   // Load initial data
   useEffect(() => {
@@ -36,33 +39,44 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color('#0a0e17');
       
-      // Add fog for depth effect
-      scene.fog = new THREE.Fog('#0a0e17', 20, 100);
+      // Add fog for depth effect - reduce fog on mobile for better visibility
+      scene.fog = new THREE.Fog('#0a0e17', isMobile ? 25 : 20, isMobile ? 80 : 100);
       
       // Setup camera
       const camera = new THREE.PerspectiveCamera(
-        75,
+        isMobile ? 85 : 75, // Wider FOV on mobile
         containerRef.current.clientWidth / containerRef.current.clientHeight,
         0.1,
         1000
       );
-      camera.position.z = 30;
+      // Adjust initial camera position for mobile
+      camera.position.z = isMobile ? 40 : 30;
       
       // Setup renderer
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ 
+        antialias: !isMobile, // Disable antialiasing on mobile for performance
+        powerPreference: 'high-performance'
+      });
       renderer.setSize(
         containerRef.current.clientWidth,
         containerRef.current.clientHeight
       );
+      renderer.setPixelRatio(window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio); // Limit pixel ratio for performance
       containerRef.current.appendChild(renderer.domElement);
       
-      // Setup controls
+      // Setup controls - adjust for touch on mobile
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.25;
+      controls.dampingFactor = isMobile ? 0.2 : 0.25;
+      controls.rotateSpeed = isMobile ? 0.6 : 1; // Slower rotation on mobile for better control
+      controls.touchRotateSpeed = 0.4; // Specifically for touch
+      controls.touches = {
+        ONE: THREE.TOUCH.ROTATE,
+        TWO: THREE.TOUCH.DOLLY_PAN
+      };
       
-      // Add grid for reference
-      const gridHelper = new THREE.GridHelper(100, 20, 0x444444, 0x222222);
+      // Add grid for reference - smaller grid on mobile
+      const gridHelper = new THREE.GridHelper(isMobile ? 70 : 100, 20, 0x444444, 0x222222);
       gridHelper.position.y = -10;
       scene.add(gridHelper);
       
@@ -92,9 +106,9 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
         // Update controls
         controls.update();
         
-        // Animate nodes with a gentle hover
+        // Animate nodes with a gentle hover - less motion on mobile
         nodesRef.current.forEach((mesh) => {
-          mesh.position.y += Math.sin(Date.now() * 0.001 + mesh.position.x) * 0.005;
+          mesh.position.y += Math.sin(Date.now() * 0.001 + mesh.position.x) * (isMobile ? 0.003 : 0.005);
         });
         
         // Render scene
@@ -121,16 +135,16 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
         containerRef.current?.removeChild(renderer.domElement);
       };
     }
-  }, [graphData]);
+  }, [graphData, isMobile]);
 
   // Add nodes and edges when data changes
   useEffect(() => {
     if (!graphData || !sceneRef.current) return;
 
-    // Add nodes
+    // Add nodes - scale sizes differently on mobile
     graphData.nodes.forEach((node) => {
       if (!nodesRef.current.has(node.id)) {
-        const mesh = createNodeMesh(node);
+        const mesh = createNodeMesh(node, isMobile);
         sceneRef.current?.add(mesh);
         nodesRef.current.set(node.id, mesh);
       }
@@ -143,13 +157,13 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
         const targetNode = graphData.nodes.find((n) => n.id === edge.target);
         
         if (sourceNode && targetNode) {
-          const line = createEdgeLine(edge, sourceNode, targetNode);
+          const line = createEdgeLine(edge, sourceNode, targetNode, isMobile);
           sceneRef.current?.add(line);
           edgesRef.current.set(edge.id, line);
         }
       }
     });
-  }, [graphData]);
+  }, [graphData, isMobile]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -169,21 +183,24 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
   }, []);
 
   // Helper function to create a node mesh
-  const createNodeMesh = (node: ThreejsNode): THREE.Mesh => {
+  const createNodeMesh = (node: ThreejsNode, isMobile: boolean): THREE.Mesh => {
+    // Scale factor for mobile
+    const scale = isMobile ? 1.2 : 1; // Slightly larger on mobile for better visibility
+    
     // Different geometries based on node type
     let geometry;
     switch (node.type) {
       case 'contract':
-        geometry = new THREE.BoxGeometry(1, 1, 1);
+        geometry = new THREE.BoxGeometry(1 * scale, 1 * scale, 1 * scale);
         break;
       case 'wallet':
-        geometry = new THREE.SphereGeometry(0.5, 32, 32);
+        geometry = new THREE.SphereGeometry(0.5 * scale, isMobile ? 16 : 32, isMobile ? 16 : 32);
         break;
       case 'exchange':
-        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+        geometry = new THREE.CylinderGeometry(0.5 * scale, 0.5 * scale, 1 * scale, isMobile ? 16 : 32);
         break;
       default:
-        geometry = new THREE.TetrahedronGeometry(0.5);
+        geometry = new THREE.TetrahedronGeometry(0.5 * scale);
     }
     
     // Color based on risk score
@@ -204,7 +221,7 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
     const material = new THREE.MeshPhongMaterial({
       color,
       emissive: color.clone().multiplyScalar(0.3),
-      shininess: 100,
+      shininess: isMobile ? 80 : 100, // Reduce shininess on mobile
     });
     
     const mesh = new THREE.Mesh(geometry, material);
@@ -218,7 +235,12 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
   };
 
   // Helper function to create edge line
-  const createEdgeLine = (edge: ThreejsEdge, source: ThreejsNode, target: ThreejsNode): THREE.Line => {
+  const createEdgeLine = (
+    edge: ThreejsEdge, 
+    source: ThreejsNode, 
+    target: ThreejsNode,
+    isMobile: boolean
+  ): THREE.Line => {
     // Create line geometry between nodes
     const geometry = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(source.position.x, source.position.y, source.position.z),
@@ -244,7 +266,7 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
     const material = new THREE.LineBasicMaterial({ 
       color,
       transparent: true,
-      opacity: 0.6,
+      opacity: isMobile ? 0.7 : 0.6, // Slightly more visible on mobile
       linewidth: 1, // Note: linewidth > 1 only works in some browsers
     });
     
@@ -255,7 +277,7 @@ const ThreatMap3D: React.FC<ThreatMap3DProps> = ({ className }) => {
     <div 
       ref={containerRef} 
       className={`w-full h-full relative overflow-hidden cyber-panel ${className}`}
-      style={{ minHeight: '400px' }}
+      style={{ minHeight: isMobile ? '300px' : '400px' }}
     >
       {!graphData && (
         <div className="absolute inset-0 flex items-center justify-center text-cyber-secondary">

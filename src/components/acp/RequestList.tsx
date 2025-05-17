@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Filter, SortAsc, SortDesc } from 'lucide-react';
+import { useIsMobile } from '../../hooks/use-mobile';
 
 interface RequestListProps {
   serviceRequests: ACPServiceRequest[];
@@ -35,6 +36,7 @@ const RequestList: React.FC<RequestListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const isMobile = useIsMobile();
 
   // Filter and sort requests
   const filteredAndSortedRequests = serviceRequests
@@ -66,25 +68,25 @@ const RequestList: React.FC<RequestListProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {/* Filtering and sorting controls */}
-      <div className="p-2 space-y-2">
+      <div className="p-1 sm:p-2 space-y-2">
         {/* Search and filter row */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Input
-            placeholder="Search requests..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 bg-cyber-muted/50 border-cyber-border text-cyber-foreground"
+            className="flex-1 bg-cyber-muted/50 border-cyber-border text-cyber-foreground text-xs sm:text-sm h-8 sm:h-10"
           />
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <Select
               value={typeFilter}
               onValueChange={setTypeFilter}
             >
-              <SelectTrigger className="w-[130px] bg-cyber-muted/50 border-cyber-border text-cyber-foreground">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filter by" />
+              <SelectTrigger className={`${isMobile ? 'w-20 text-xs h-8 px-2' : 'w-[130px]'} bg-cyber-muted/50 border-cyber-border text-cyber-foreground`}>
+                {!isMobile && <Filter className="mr-2 h-4 w-4" />}
+                <SelectValue placeholder="Filter" />
               </SelectTrigger>
               <SelectContent className="cyber-panel border-cyber-border">
                 <SelectItem value="all">All Types</SelectItem>
@@ -99,14 +101,14 @@ const RequestList: React.FC<RequestListProps> = ({
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="bg-cyber-muted/50 border-cyber-border text-cyber-foreground"
+                  className={`bg-cyber-muted/50 border-cyber-border text-cyber-foreground ${isMobile ? 'h-8 px-2 text-xs' : ''}`}
                 >
                   {sortOrder === 'newest' ? (
-                    <SortDesc className="mr-2 h-4 w-4" />
+                    <SortDesc className={`${isMobile ? '' : 'mr-2'} h-4 w-4`} />
                   ) : (
-                    <SortAsc className="mr-2 h-4 w-4" />
+                    <SortAsc className={`${isMobile ? '' : 'mr-2'} h-4 w-4`} />
                   )}
-                  Sort
+                  {!isMobile && "Sort"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="cyber-panel border-cyber-border">
@@ -132,14 +134,14 @@ const RequestList: React.FC<RequestListProps> = ({
 
       {/* Requests list */}
       {filteredAndSortedRequests.length === 0 ? (
-        <div className="p-6 text-center">
-          <p className="text-cyber-muted-foreground mb-4">
+        <div className="p-2 sm:p-6 text-center text-xs sm:text-sm">
+          <p className="text-cyber-muted-foreground mb-2 sm:mb-4">
             {serviceRequests.length === 0 
               ? "No service requests found" 
               : "No matching requests found"}
           </p>
           <Button 
-            className="cyber-button"
+            className="cyber-button text-xs sm:text-sm py-1 px-2 sm:px-4 sm:py-2"
             onClick={onNewRequest}
             disabled={!walletConnected}
           >
@@ -147,7 +149,7 @@ const RequestList: React.FC<RequestListProps> = ({
           </Button>
         </div>
       ) : (
-        <div className="p-2 space-y-2">
+        <div className="p-1 sm:p-2 space-y-1 sm:space-y-2 overflow-y-auto max-h-[calc(100%-80px)]">
           {filteredAndSortedRequests.map((request) => (
             <RequestItem key={request.id} request={request} />
           ))}
